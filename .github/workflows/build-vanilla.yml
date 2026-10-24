@@ -64,11 +64,10 @@ jobs:
             libtinfo-dev \
             gcc-aarch64-linux-gnu \
             binutils-aarch64-linux-gnu
-          # Add cross-compiler to PATH
-          echo "/usr/bin" >> $GITHUB_PATH
           which aarch64-linux-gnu-gcc
 
       - name: Install LLVM/Clang
+        id: clang
         run: |
           for i in 1 2 3; do
             wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
@@ -76,14 +75,12 @@ jobs:
           done
           tar -xf clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
           rm clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-          echo "$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin" >> $GITHUB_PATH
-          export PATH="$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin:$PATH"
+          echo "CLANG_PATH=$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin" >> $GITHUB_OUTPUT
           clang --version
           ld.lld --version
 
       - name: Build vanilla kernel (o1s)
         env:
-          PATH: ${{ env.PATH }}:${{ github.workspace }}/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin
           CROSS_COMPILE: aarch64-linux-gnu-
           CC: clang
           LD: ld.lld
@@ -92,6 +89,7 @@ jobs:
           OBJDUMP: llvm-objdump
           STRIP: llvm-strip
         run: |
+          export PATH="${{ steps.clang.outputs.CLANG_PATH }}:$PATH"
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh
 
