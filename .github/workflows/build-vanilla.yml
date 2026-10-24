@@ -32,10 +32,16 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Set up toolchain
+      - name: Build kernel (all-in-one)
         shell: bash
         run: |
+          set -e
           export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+          echo "PATH=$PATH"
+          which chmod
+          which bash
+          which git
+
           # Free up disk space (aggressive)
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
@@ -68,45 +74,41 @@ jobs:
             binutils-aarch64-linux-gnu
           which aarch64-linux-gnu-gcc
 
-- name: Install LLVM/Clang
-        id: clang
-        shell: bash
-        run: |
-          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+          # Install LLVM/Clang
           for i in 1 2 3; do
             wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
             sleep 10
           done
           tar -xf clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
           rm clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-          echo "CLANG_PATH=$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin" >> $GITHUB_OUTPUT
+          CLANG_PATH="$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin"
+          export PATH="$CLANG_PATH:$PATH"
           clang --version
           ld.lld --version
 
-      - name: Build vanilla kernel (o1s)
-        shell: bash
-        env:
-          CROSS_COMPILE: aarch64-linux-gnu-
-          CC: clang
-          LD: ld.lld
-          NM: llvm-nm
-          OBJCOPY: llvm-objcopy
-          OBJDUMP: llvm-objdump
-          STRIP: llvm-strip
-        run: |
-          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${{ steps.clang.outputs.CLANG_PATH }}:$PATH"
-          which chmod
-          which bash
+          # Build kernel
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CC=clang
+          export LD=ld.lld
+          export NM=llvm-nm
+          export OBJCOPY=llvm-objcopy
+          export OBJDUMP=llvm-objdump
+          export STRIP=llvm-strip
+
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh
 
       - name: Verify build artifacts
+        shell: bash
         run: |
+          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           ls -la artifacts/Image.gz
           ls -la artifacts/*.dtbo
 
       - name: Package o1s artifacts
+        shell: bash
         run: |
+          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           tar -czf vanilla-kernel-o1s-${{ github.sha::8 }}.tar.gz -C artifacts .
 
       - name: Upload o1s artifacts
