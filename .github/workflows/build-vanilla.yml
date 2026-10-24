@@ -2,10 +2,10 @@ name: Build Vanilla Kernel (Exynos 2100 - o1s)
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, floppy-main]
     tags: ['v*']
   pull_request:
-    branches: [main, master]
+    branches: [main, master, floppy-main]
   workflow_dispatch:
     inputs:
       ref:
