@@ -10,6 +10,15 @@ export PLATFORM_VERSION=11
 export ANDROID_MAJOR_VERSION=r
 export SEC_BUILD_CONF_VENDOR_BUILD_OS=13
 
+# Use cross-compiler from toolchain (set by workflow)
+export CROSS_COMPILE=${CROSS_COMPILE:-aarch64-linux-android-}
+export CC=${CC:-clang}
+export LD=${LD:-ld.lld}
+export NM=${NM:-llvm-nm}
+export OBJCOPY=${OBJCOPY:-llvm-objcopy}
+export OBJDUMP=${OBJDUMP:-llvm-objdump}
+export STRIP=${STRIP:-llvm-strip}
+
 # Create config fragment for o1s vanilla kernel
 cat > /tmp/o1s_vanilla.config << 'EOF'
 # Disable non-Exynos platforms

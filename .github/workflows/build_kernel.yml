@@ -66,6 +66,15 @@ jobs:
           echo "~/toolchains/clang-r416183b/bin" >> $GITHUB_PATH
 
       - name: Build kernel (vanilla o1s)
+        env:
+          PATH: ${{ env.PATH }}:~/toolchains/aarch64-linux-android-4.9/bin:~/toolchains/arm-linux-androideabi-4.9/bin:~/toolchains/clang-r416183b/bin
+          CROSS_COMPILE: aarch64-linux-android-
+          CC: clang
+          LD: ld.lld
+          NM: llvm-nm
+          OBJCOPY: llvm-objcopy
+          OBJDUMP: llvm-objdump
+          STRIP: llvm-strip
         run: |
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh

@@ -61,7 +61,9 @@ jobs:
             python3-pyelftools \
             libncurses-dev \
             zlib1g-dev \
-            libtinfo-dev
+            libtinfo-dev \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu
 
       - name: Install LLVM/Clang
         run: |
@@ -79,6 +81,13 @@ jobs:
       - name: Build vanilla kernel (o1s)
         env:
           PATH: ${{ env.PATH }}:${{ github.workspace }}/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin
+          CROSS_COMPILE: aarch64-linux-gnu-
+          CC: clang
+          LD: ld.lld
+          NM: llvm-nm
+          OBJCOPY: llvm-objcopy
+          OBJDUMP: llvm-objdump
+          STRIP: llvm-strip
         run: |
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh
