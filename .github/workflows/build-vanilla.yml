@@ -64,6 +64,9 @@ jobs:
             libtinfo-dev \
             gcc-aarch64-linux-gnu \
             binutils-aarch64-linux-gnu
+          # Add cross-compiler to PATH
+          echo "/usr/bin" >> $GITHUB_PATH
+          which aarch64-linux-gnu-gcc
 
       - name: Install LLVM/Clang
         run: |
