@@ -34,11 +34,14 @@ jobs:
 
       - name: Set up toolchain
         run: |
-          # Free up disk space
+          # Free up disk space (aggressive)
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/include/boost
           sudo apt-get clean
+          sudo apt-get autoremove -y
           df -h /
           
           sudo apt-get update
@@ -63,19 +66,19 @@ jobs:
       - name: Install LLVM/Clang
         run: |
           for i in 1 2 3; do
-            wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.7/clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
+            wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
             sleep 10
           done
-          tar -xf clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-          rm clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-          echo "$PWD/clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04/bin" >> $GITHUB_PATH
-          export PATH="$PWD/clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04/bin:$PATH"
+          tar -xf clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          rm clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          echo "$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin" >> $GITHUB_PATH
+          export PATH="$PWD/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin:$PATH"
           clang --version
           ld.lld --version
 
       - name: Build vanilla kernel (o1s)
         env:
-          PATH: ${{ env.PATH }}:${{ github.workspace }}/clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04/bin
+          PATH: ${{ env.PATH }}:${{ github.workspace }}/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin
         run: |
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh

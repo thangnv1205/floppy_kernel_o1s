@@ -21,11 +21,14 @@ jobs:
 
       - name: Setup build environment
         run: |
-          # Free up disk space first
+          # Free up disk space first (aggressive)
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/include/boost
           sudo apt-get clean
+          sudo apt-get autoremove -y
           df -h /
           
           sudo apt-get update
@@ -50,14 +53,14 @@ jobs:
             git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 && break
             sleep 10
           done
-          # Use LLVM 15 (smaller, ~1GB vs 2GB for LLVM 17)
+          # Use LLVM 17 (has Ubuntu 22.04 binary)
           for i in 1 2 3; do
-            wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.7/clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
+            wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
             sleep 10
           done
-          tar -xf clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-          mv clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04 clang-r416183b
-          rm clang+llvm-15.0.7-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          tar -xf clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          mv clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04 clang-r416183b
+          rm clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
           echo "~/toolchains/aarch64-linux-android-4.9/bin" >> $GITHUB_PATH
           echo "~/toolchains/arm-linux-androideabi-4.9/bin" >> $GITHUB_PATH
           echo "~/toolchains/clang-r416183b/bin" >> $GITHUB_PATH
