@@ -33,7 +33,9 @@ jobs:
           fetch-depth: 0
 
       - name: Set up toolchain
+        shell: bash
         run: |
+          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           # Free up disk space (aggressive)
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
@@ -66,9 +68,11 @@ jobs:
             binutils-aarch64-linux-gnu
           which aarch64-linux-gnu-gcc
 
-      - name: Install LLVM/Clang
+- name: Install LLVM/Clang
         id: clang
+        shell: bash
         run: |
+          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           for i in 1 2 3; do
             wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
             sleep 10
@@ -80,6 +84,7 @@ jobs:
           ld.lld --version
 
       - name: Build vanilla kernel (o1s)
+        shell: bash
         env:
           CROSS_COMPILE: aarch64-linux-gnu-
           CC: clang
@@ -89,7 +94,9 @@ jobs:
           OBJDUMP: llvm-objdump
           STRIP: llvm-strip
         run: |
-          export PATH="${{ steps.clang.outputs.CLANG_PATH }}:$PATH"
+          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${{ steps.clang.outputs.CLANG_PATH }}:$PATH"
+          which chmod
+          which bash
           chmod +x build_kernel_vanilla.sh
           ./build_kernel_vanilla.sh
 
