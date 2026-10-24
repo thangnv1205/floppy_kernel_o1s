@@ -36,7 +36,10 @@ jobs:
           cd ~/toolchains
           git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
           git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/clang-r416183b
+          # Use modern LLVM release instead of deprecated AOSP clang path
+          wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          tar -xf clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+          mv clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04 clang-r416183b
           echo "~/toolchains/aarch64-linux-android-4.9/bin" >> $GITHUB_PATH
           echo "~/toolchains/arm-linux-androideabi-4.9/bin" >> $GITHUB_PATH
           echo "~/toolchains/clang-r416183b/bin" >> $GITHUB_PATH
