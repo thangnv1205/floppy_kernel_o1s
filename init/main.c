@@ -199,7 +199,7 @@ static char mass_storage_hack_default_arg[] = "mass_storage_hack=0";
 static int selinux_mode = FK_SELINUX_MODE_DEFAULT;
 static char selinux_mode_default_arg[] = "selinux_mode=0";
 static int default_sbwc_mode = FK_SBWC_MODE_FULL;
-static char default_sbwc_mode_default_arg[] = "default_sbwc_mode=0";
+static char default_sbwc_mode_default_arg[] = "default_sbwc_mode=1";
 static bool init_protection = true;
 static char init_protection_default_arg[] = "init_protection=1";
 static bool init_debug;
