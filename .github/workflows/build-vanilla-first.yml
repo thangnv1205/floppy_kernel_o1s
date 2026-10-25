@@ -1,0 +1,181 @@
+name: Build Kernel (Vanilla First)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [floppy-main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 5G
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Clean
+        uses: rokibhasansagar/slimhub_actions@main
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-exynos2100-vanilla
+          restore-keys: |
+            ccache-exynos2100-vanilla-
+          save-always: true
+
+      - name: Prepare environment
+        run: |
+          sudo apt update
+          DEBIAN_FRONTEND=noninteractive sudo apt install -yq \
+            brotli zip zstd tar lz4 cpio xz-utils flex bc kmod ccache binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu
+
+      - name: Restore toolchains
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../toolchains
+          key: toolchains-aosp-vanilla
+          save-always: true
+
+      - name: Setup AOSP Clang toolchain
+        run: |
+          tc_dir="${{ github.workspace }}/../toolchains/aospclang"
+          list_url="$(grep -oP '^AOSP_LIST="\K[^"]+' build/scripts/tc.sh | head -n 1)"
+          want="$(curl -s "$list_url" | grep -oP 'href="[^"]*clang-r[0-9]+/' | grep -oP 'clang-r[0-9]+' | sort -V | tail -n1)"
+          if [ -n "$want" ] && [ -d "$tc_dir" ]; then
+            have="clang-$("$tc_dir/bin/clang" --version 2>/dev/null | grep -oP 'based on \Kr[0-9]+' | head -n1)"
+            if [ "$have" != "$want" ]; then
+              echo "Cached toolchain $have does not match $want, evicting"
+              rm -rf "$tc_dir"
+            fi
+          fi
+
+      - name: Build Vanilla (tq)
+        env:
+          CCACHE_DISABLE: "0"
+        run: |
+          rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
+          rm -rf build/images || true
+          mkdir -p build/images
+          ./do_build.sh tq
+
+      - name: Upload Vanilla artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vanilla-kernel-o1s
+          path: build/*.zip
+          retention-days: 30
+
+      - name: Build (KernelSU Next)
+        run: |
+          rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
+          rm -rf build/images || true
+          mkdir -p build/images
+          ./do_build.sh tkq
+
+      - name: Prepare artifacts (KernelSU Next)
+        id: artifacts_tk
+        run: |
+          set -e
+          shopt -s nullglob
+          short_sha="$(echo "$GITHUB_SHA" | cut -c1-7)"
+          variant_name="KSUNext"
+          zips=(build/*.zip)
+          if [ ${#zips[@]} -ne 1 ]; then
+            echo "ERROR: expected exactly 1 flashable zip, got ${#zips[@]}";
+            ls -la build || true
+            exit 1
+          fi
+          zip_path="${zips[0]}"
+          zip_name="$(basename "$zip_path")"
+          zip_stem="${zip_name%.zip}"
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_stem=$zip_stem" >> "$GITHUB_OUTPUT"
+
+      - name: Upload flashable zip (KernelSU Next)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifacts_tk.outputs.zip_stem }}
+          if-no-files-found: error
+          path: build/*.zip
+          compression-level: 0
+
+      - name: Build (BakaSU)
+        run: |
+          rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
+          rm -rf build/images || true
+          mkdir -p build/images
+          ./do_build.sh tsq
+
+      - name: Prepare artifacts (BakaSU)
+        id: artifacts_ts
+        run: |
+          set -e
+          shopt -s nullglob
+          short_sha="$(echo "$GITHUB_SHA" | cut -c1-7)"
+          variant_name="BakaSU"
+          zips=(build/*.zip)
+          if [ ${#zips[@]} -ne 1 ]; then
+            echo "ERROR: expected exactly 1 flashable zip, got ${#zips[@]}";
+            ls -la build || true
+            exit 1
+          fi
+          zip_path="${zips[0]}"
+          zip_name="$(basename "$zip_path")"
+          zip_stem="${zip_name%.zip}"
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_stem=$zip_stem" >> "$GITHUB_OUTPUT"
+
+      - name: Upload flashable zip (BakaSU)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifacts_ts.outputs.zip_stem }}
+          if-no-files-found: error
+          path: build/*.zip
+          compression-level: 0
+
+      - name: Build (XXKSU)
+        run: |
+          rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
+          rm -rf build/images || true
+          mkdir -p build/images
+          ./do_build.sh txq
+
+      - name: Prepare artifacts (XXKSU)
+        id: artifacts_tu
+        run: |
+          set -e
+          shopt -s nullglob
+          short_sha="$(echo "$GITHUB_SHA" | cut -c1-7)"
+          variant_name="XXKSU"
+          zips=(build/*.zip)
+          if [ ${#zips[@]} -ne 1 ]; then
+            echo "ERROR: expected exactly 1 flashable zip, got ${#zips[@]}";
+            ls -la build || true
+            exit 1
+          fi
+          zip_path="${zips[0]}"
+          zip_name="$(basename "$zip_path")"
+          zip_stem="${zip_name%.zip}"
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_stem=$zip_stem" >> "$GITHUB_OUTPUT"
+
+      - name: Upload flashable zip (XXKSU)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifacts_tu.outputs.zip_stem }}
+          if-no-files-found: error
+          path: build/*.zip
+          compression-level: 0
+
+      - name: Show ccache stats
+        run: ccache -s || true
