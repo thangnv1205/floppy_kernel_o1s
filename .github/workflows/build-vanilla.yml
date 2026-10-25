@@ -107,24 +107,19 @@ jobs:
           PATH: /usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
         run: |
           ls -la build/*.zip
-          ls -la build/*.tar
 
       - name: Upload vanilla artifacts
         uses: actions/upload-artifact@v4
         with:
           name: vanilla-kernel-o1s
-          path: |
-            build/*.zip
-            build/*.tar
+          path: build/*.zip
           retention-days: 30
 
       - name: Create release (on tag push)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/*.zip
-            build/*.tar
+          files: build/*.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
