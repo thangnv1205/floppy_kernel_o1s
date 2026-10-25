@@ -36,6 +36,9 @@ jobs:
         shell: bash
         env:
           PATH: /usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
+          # Disable ccache to prevent OOM/deadlock
+          CCACHE_DISABLE: "1"
+          CCACHE_NOHASHDIR: "1"
         run: |
           set -e
           echo "PATH=$PATH"
@@ -88,6 +91,7 @@ jobs:
           ld.lld --version
 
           # Build kernel using do_build.sh (vanilla = tq)
+          # Disable ccache, limit jobs to 4 to prevent OOM
           export CROSS_COMPILE=aarch64-linux-gnu-
           export CC=clang
           export LD=ld.lld
@@ -95,6 +99,9 @@ jobs:
           export OBJCOPY=llvm-objcopy
           export OBJDUMP=llvm-objdump
           export STRIP=llvm-strip
+          export CCACHE_DISABLE=1
+          export CCACHE_NOHASHDIR=1
+          export MAKEFLAGS="-j4"
 
           rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
           rm -rf build/images || true
