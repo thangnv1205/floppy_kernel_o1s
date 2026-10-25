@@ -123,11 +123,8 @@ CONFIG_TZDEV_IWI_PANIC=901
 # Samsung audio DRAM size
 CONFIG_SND_SOC_SAMSUNG_ABOX_DRAM_SIZE=0x1000000
 
-# Android KABI - disable checks for vanilla build
-CONFIG_ANDROID_KABI_REPLACEMENT=n
-CONFIG_ANDROID_KABI_CHECK=n
-CONFIG_UNUSED_SYMBOLS=y
-CONFIG_TRIM_UNUSED_KSYMS=n
+# Android KABI - enable reserves for compatibility with existing source
+CONFIG_ANDROID_KABI_RESERVE=y
 
 # Local version
 CONFIG_LOCALVERSION="-vanilla-o1s"
