@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-          tar -czf vanilla-kernel-o1s-${{ github.sha::8 }}.tar.gz -C artifacts .
+          tar -czf vanilla-kernel-o1s-${{ github.sha }}.tar.gz -C artifacts .
 
       - name: Upload o1s artifacts
         uses: actions/upload-artifact@v4
