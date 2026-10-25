@@ -59,10 +59,14 @@ jobs:
       - name: Build Vanilla (tq)
         env:
           CCACHE_DISABLE: "0"
+          DO_QUIET: "0"
         run: |
+          set -e
           rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
           rm -rf build/images || true
           mkdir -p build/images
+          # Show actual make command for debugging
+          echo "Building with: ./do_build.sh tq"
           ./do_build.sh tq
 
       - name: Upload Vanilla artifacts
