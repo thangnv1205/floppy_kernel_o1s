@@ -32,7 +32,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Build kernel (all-in-one)
+      - name: Build kernel (vanilla)
         shell: bash
         env:
           PATH: /usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
@@ -43,7 +43,7 @@ jobs:
           which bash
           which git
 
-          # Free up disk space (aggressive)
+          # Free up disk space
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/lib/android
@@ -75,7 +75,7 @@ jobs:
             binutils-aarch64-linux-gnu
           which aarch64-linux-gnu-gcc
 
-          # Install LLVM/Clang
+          # Install LLVM/Clang 17
           for i in 1 2 3; do
             wget -q --timeout=30 --tries=3 https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang%2Bllvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz -O clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz && [ -f clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz ] && break
             sleep 10
@@ -87,7 +87,7 @@ jobs:
           clang --version
           ld.lld --version
 
-          # Build kernel
+          # Build kernel using do_build.sh (vanilla = tq)
           export CROSS_COMPILE=aarch64-linux-gnu-
           export CC=clang
           export LD=ld.lld
@@ -96,34 +96,35 @@ jobs:
           export OBJDUMP=llvm-objdump
           export STRIP=llvm-strip
 
-          chmod +x build_kernel_vanilla.sh
-          ./build_kernel_vanilla.sh
+          rm -f build/*.zip build/*.tar build/TARs_*.zip log.txt || true
+          rm -rf build/images || true
+          mkdir -p build/images
+          ./do_build.sh tq
 
       - name: Verify build artifacts
         shell: bash
+        env:
+          PATH: /usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
         run: |
-          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-          ls -la artifacts/Image.gz
-          ls -la artifacts/*.dtbo
+          ls -la build/*.zip
+          ls -la build/*.tar
 
-      - name: Package o1s artifacts
-        shell: bash
-        run: |
-          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-          tar -czf vanilla-kernel-o1s-${{ github.sha }}.tar.gz -C artifacts .
-
-      - name: Upload o1s artifacts
+      - name: Upload vanilla artifacts
         uses: actions/upload-artifact@v4
         with:
           name: vanilla-kernel-o1s
-          path: vanilla-kernel-o1s-*.tar.gz
+          path: |
+            build/*.zip
+            build/*.tar
           retention-days: 30
 
       - name: Create release (on tag push)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: vanilla-kernel-o1s-*.tar.gz
+          files: |
+            build/*.zip
+            build/*.tar
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
