@@ -34,9 +34,10 @@ jobs:
 
       - name: Build kernel (all-in-one)
         shell: bash
+        env:
+          PATH: /usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
         run: |
           set -e
-          export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           echo "PATH=$PATH"
           which chmod
           which bash
