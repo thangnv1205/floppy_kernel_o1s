@@ -458,10 +458,9 @@ append_module_rc:
 		pr_info("read_proxy: append module %zu\n", append_count);
 		module_rc_pos += append_count;
 		ret += append_count;
-		if (module_rc_pos == (ssize_t)module_rc_len) {
+		// keep module_rc_buf: a later open of init.rc appends it again
+		if (module_rc_pos == (ssize_t)module_rc_len)
 			pr_info("read_proxy: module append done\n");
-			free_module_rc();
-		}
 	}
 
 	return ret;
@@ -518,10 +517,9 @@ append_module_rc:
 		pr_info("read_iter_proxy: append module %zu\n", append_count);
 		module_rc_pos += append_count;
 		ret += append_count;
-		if (module_rc_pos == (ssize_t)module_rc_len) {
+		// keep module_rc_buf: a later open of init.rc appends it again
+		if (module_rc_pos == (ssize_t)module_rc_len)
 			pr_info("read_iter_proxy: module append done\n");
-			free_module_rc();
-		}
 	}
 	return ret;
 }
@@ -582,19 +580,23 @@ static bool is_init_rc(struct file *fp)
 
 static void ksu_apply_init_rc_proxy(struct file *file)
 {
-    // we only process the first read
-    // READ_ONCE/WRITE_ONCE: this runs from the read(2) path and can be
-    // entered concurrently on two descriptors of init.rc.
-    static bool rc_hooked = false;
-    if (READ_ONCE(rc_hooked)) {
-        // we don't need these kprobe, unregister it!
-        stop_init_rc_hook();
+    // Some init builds open init.rc more than once (e.g. a pre-pass before
+    // the real parse), so proxy every new open file instead of only the
+    // first one. The hook is torn down at post-fs-data, once init.rc has
+    // been parsed for good.
+    static unsigned int rc_hook_count = 0;
+
+    // this open file is already proxied, its later read() calls land here too
+    if (file->f_op == &fops_proxy)
         return;
-    }
-    WRITE_ONCE(rc_hooked, true);
 
     // now we can sure that the init process is reading
     // `/system/etc/init/init.rc`
+
+    // restart the append for this new open file
+    ksu_rc_pos = 0;
+    module_rc_pos = 0;
+    rc_hook_count++;
 
 #ifndef KSU_KPROBES_HOOK
     // manual-hook builds run in normal context; kprobe pre-handlers are
@@ -602,8 +604,8 @@ static void ksu_apply_init_rc_proxy(struct file *file)
     load_module_rc_once();
 #endif
 
-    pr_info("read init.rc, comm: %s, rc_count: %zu, module_rc: %zu\n", current->comm,
-            ksu_rc_len, module_rc_len);
+    pr_info("read init.rc (open #%u), comm: %s, rc_count: %zu, module_rc: %zu\n",
+            rc_hook_count, current->comm, ksu_rc_len, module_rc_len);
 
     // Now we need to proxy the read and modify the result!
     // But, we can not modify the file_operations directly, because it's in read-only memory.
@@ -1019,7 +1021,7 @@ static noinline void ksu_common_newfstat_ret(unsigned int fd_int, void **statbuf
 
 void ksu_handle_newfstat_ret(unsigned int *fd, struct stat __user **statbuf_ptr)
 {
-	if (likely(!ksu_vfs_read_hook))
+	if (likely(!ksu_init_rc_hook))
 		return;
 
 	ksu_common_newfstat_ret(*fd, (void **)statbuf_ptr, STAT_NATIVE, "sys_newfstat");
@@ -1029,7 +1031,7 @@ void ksu_handle_newfstat_ret(unsigned int *fd, struct stat __user **statbuf_ptr)
 void ksu_handle_fstat64_ret(unsigned long *fd, struct stat64 __user **statbuf_ptr)
 {
 
-	if (likely(!ksu_vfs_read_hook))
+	if (likely(!ksu_init_rc_hook))
 		return;
 
 	// WARNING: LE-only!!!

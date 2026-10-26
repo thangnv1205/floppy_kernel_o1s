@@ -40,6 +40,7 @@ void ksu_ksud_init();
 void ksu_ksud_exit();
 
 void ksu_stop_input_hook_runtime(void);
+void stop_init_rc_hook(void);
 
 extern bool ksu_execveat_hook __read_mostly;
 

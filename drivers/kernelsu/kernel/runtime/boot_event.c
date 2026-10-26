@@ -71,6 +71,8 @@ void on_post_fs_data(void)
 	pr_info("ksud %s\n", ksu_ksud_present ? "present" : "not installed");
 	// sanity check, this may influence the performance
 	ksu_stop_input_hook_runtime();
+	// init.rc has been parsed by now, stop proxying it
+	stop_init_rc_hook();
 	ksu_selinux_hide_handle_post_fs_data();
 }
 
