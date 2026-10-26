@@ -1,0 +1,14 @@
+# Drop into /system/etc/init/ (or vendor equivalent) and adjust paths.
+# Start on boot:  setprop persist.adaptive.pin 1
+service adaptive-pin /system/bin/sh /system/bin/adaptive-pin.sh daemon
+    class main
+    user root
+    group root system
+    disabled
+    oneshot
+
+on property:persist.adaptive.pin=1
+    start adaptive-pin
+
+on property:persist.adaptive.pin=0
+    stop adaptive-pin
