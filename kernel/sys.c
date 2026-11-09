@@ -1567,6 +1567,16 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
+	/*
+	 * Apply the SuSFS user-defined uname first so the BPF loader spoof
+	 * below always wins for the BPF loaders. Otherwise any SuSFS uname
+	 * config (even release="default" with a custom version) restores the
+	 * real 5.4 release for netbpfload, which then aborts with
+	 * "Android 25Q4 requires kernel 5.10" -> reboot,bpfloader-failed loop.
+	 */
+	susfs_spoof_uname(&tmp);
+#endif
 #ifndef CONFIG_FAKE_UNAME_NONE
 	{
 		int bpf_spoof = is_bpf_spoof_enabled();
@@ -1603,9 +1613,6 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 		}
 	}
 	}
-#endif
-#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
-	susfs_spoof_uname(&tmp);
 #endif
 	up_read(&uts_sem);
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
